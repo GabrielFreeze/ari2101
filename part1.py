@@ -121,17 +121,11 @@ def main():
         elif i == 2 and moveRight(grid) is not None: grid = moveRight(grid)
         elif i == 3 and moveLeft(grid)  is not None: grid = moveLeft(grid)
 
-    grid = moveUp(grid)
-    grid = moveLeft(grid)
-    grid = moveLeft(grid)
-    grid = moveDown(grid)
-
-
     printGrid(grid)
     path = bfs(grid)
     print([['UP','DOWN','RIGHT','LEFT'][i] for i in path])
     
-    sleep(3.5)
+    sleep(2.5)
     printGrid(grid,True)
 
     for i in path:
