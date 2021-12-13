@@ -1,11 +1,12 @@
-from random import sample
+import random
 from time import sleep
-
+from copy import deepcopy
 
 
 def printGrid(grid, x = False):
     
     if grid == None: return
+    if x: print("\033[%d;%dH" % (0,0))
     
     colors = ['','\033[95m', '\033[94m', '\033[96m', '\033[92m', '\033[93m', '\033[91m', '\033[4m', '\033[1m']
     end = '\033[0m'
@@ -21,79 +22,126 @@ def printGrid(grid, x = False):
 
     print('⌞___⊥___⊥___⌟')
 
-    if x: print("\033[%d;%dH" % (0,0))
+    
 
 def moveUp(grid):
     if grid == None: return None
+    new_grid = deepcopy(grid)
 
-    empty = [i for i in grid if grid[i] == 0][0] #The position of the empty slot
+    empty = [i for i in new_grid if new_grid[i] == 0][0] #The position of the empty slot
     if empty in [0,1,2]: return None
     
-    grid[empty],grid[empty-3] = grid[empty-3], grid[empty]
-    empty -= 3;
-    return grid
+    new_grid[empty],new_grid[empty-3] = new_grid[empty-3], new_grid[empty]
+    return new_grid
 
 def moveDown(grid):
     if grid == None: return None
-    empty = [i for i in grid if grid[i] == 0][0] #The position of the empty slot
+    new_grid = deepcopy(grid)
+
+    empty = [i for i in new_grid if new_grid[i] == 0][0] #The position of the empty slot
     if empty in [6,7,8]: return None
 
-    grid[empty],grid[empty+3] = grid[empty+3], grid[empty]
-    empty += 3
-    return grid
+    new_grid[empty],new_grid[empty+3] = new_grid[empty+3], new_grid[empty]
+    return new_grid
 
 def moveLeft(grid):
     if grid == None: return None
-    empty = [i for i in grid if grid[i] == 0][0] #The position of the empty slot
+    new_grid = deepcopy(grid)
+
+    empty = [i for i in new_grid if new_grid[i] == 0][0] #The position of the empty slot
     if empty in [0,3,6]: return None
 
-    grid[empty],grid[empty-1] = grid[empty-1], grid[empty]
-    empty -= 1
-    return grid
+    new_grid[empty],new_grid[empty-1] = new_grid[empty-1], new_grid[empty]
+    return new_grid
 
 def moveRight(grid):
     if grid == None: return None
-    empty = [i for i in grid if grid[i] == 0][0] #The position of the empty slot
+    new_grid = deepcopy(grid)
+
+    empty = [i for i in new_grid if new_grid[i] == 0][0] #The position of the empty slot
     if empty in [2,5,8]: return None
 
-    grid[empty], grid[empty+1] = grid[empty+1], grid[empty]
-    empty += 1
-    return grid
+    new_grid[empty], new_grid[empty+1] = new_grid[empty+1], new_grid[empty]
+    return new_grid
 
 win = lambda grid: grid == [1,2,3,4,5,6,7,8,0]
 
+
 def bfs(grid):
-    #From the current board configuration, take all possible moves (max 4) and check if it is the goal state
-    pass
+    # 0: UP
+    # 1: DOWN
+    # 2: RIGHT
+    # 3: LEFT
+
+    queue = []
+    index = 0
+    queue.append((-1,-1,grid))
+    
+    old_index = len(queue)-1
+
+    #Expanded intial grid
+    for i,s in enumerate([moveUp(grid), moveDown(grid), moveRight(grid), moveLeft(grid)]):
+        if s is not None:
+            queue.append((index,i,s))
+        if win(s):
+            return [i]
+    
+    while True:
+        diff = len(queue) - old_index
+        #For the newly added states
+        old_index2 = len(queue)-1
+        for i in range(old_index,diff+1):
+            for j,s in enumerate([moveUp(queue[i][2]), moveDown(queue[i][2]), moveRight(queue[i][2]), moveLeft(queue[i][2])]):
+                
+                if s is not None and (i,j,s) not in queue:
+                    queue.append((i,j,s))
+                
+                if win(s):
+                    path = [j]
+                    k = i
+                    
+                    while k != 0:
+                        path.insert(0,queue[k][1])
+                        k = queue[k][0]
+                    return path
+                    
+
+        old_index = old_index2
+
 
 def main():
     #Grid data Structure. Initial Starting Grid is Randomised. 0 means the square is empty
-    # grid = sample(range(9),9)
-    grid = [5,8,7,6,0,4,3,2,1]
     
-    while not win(grid):
-        
-        dt = 0.75
+    grid = [1,2,3,4,5,6,7,8,0]
 
-        grid = moveUp(grid)
-        printGrid(grid, True)
-        sleep(dt)
+    #Shuffle grid by atmost 10 times
+    for i in [int(random.random()*4) for _ in range(10)]:
+        if   i == 0 and moveUp(grid)    is not None: grid = moveUp(grid) 
+        elif i == 1 and moveDown(grid)  is not None: grid = moveDown(grid)
+        elif i == 2 and moveRight(grid) is not None: grid = moveRight(grid)
+        elif i == 3 and moveLeft(grid)  is not None: grid = moveLeft(grid)
 
-        grid = moveRight(grid)
-        printGrid(grid, True)
-        sleep(dt)
-
-        grid = moveDown(grid)
-        printGrid(grid, True)
-        sleep(dt)
-
-        grid = moveLeft(grid)
-        printGrid(grid, True)
-        sleep(dt)
+    grid = moveUp(grid)
+    grid = moveLeft(grid)
+    grid = moveLeft(grid)
+    grid = moveDown(grid)
 
 
+    printGrid(grid)
+    path = bfs(grid)
+    print([['UP','DOWN','RIGHT','LEFT'][i] for i in path])
+    
+    sleep(3.5)
+    printGrid(grid,True)
 
+    for i in path:
+        if   i == 0: grid = moveUp(grid) 
+        elif i == 1: grid = moveDown(grid)
+        elif i == 2: grid = moveRight(grid)
+        elif i == 3: grid = moveLeft(grid)
 
+        printGrid(grid,True)
+        sleep(1)
 
 
 if __name__ == "__main__":
