@@ -1,5 +1,5 @@
 import random
-from time import sleep
+import time
 from copy import deepcopy
 
 
@@ -73,29 +73,45 @@ def bfs(grid):
     # 2: RIGHT
     # 3: LEFT
 
-    queue = []
-    index = 0
-    queue.append((-1,-1,grid))
-    
-    old_index = len(queue)-1
+    #Add the initial starting state
+    #[i,j,s]
+    # i = index of parent state
+    # j = type of move (up,down,left,right)
+    # s = the current grid configuration
+    queue = [(-1,-1,grid)]
+
+    #The index of the last added state in the queue
+    parent_index = len(queue)-1
+
+    diff = 0
 
     #Expanded intial grid
     for i,s in enumerate([moveUp(grid), moveDown(grid), moveRight(grid), moveLeft(grid)]):
         if s is not None:
-            queue.append((index,i,s))
+            queue.append((0,i,s))
         if win(s):
             return [i]
     
     while True:
-        diff = len(queue) - old_index
-        #For the newly added states
-        old_index2 = len(queue)-1
-        for i in range(old_index,diff+1):
+        
+        #The index of the last added state
+        diff += len(queue) - parent_index
+
+        #The index of the last added parent state
+        parent_index2 = len(queue)-1
+
+        #Iterate through all the new states
+        for i in range(parent_index+1,diff):
+
+            #For every state, take the 4 possible moves to generate at most 4 new states
             for j,s in enumerate([moveUp(queue[i][2]), moveDown(queue[i][2]), moveRight(queue[i][2]), moveLeft(queue[i][2])]):
                 
-                if s is not None and (i,j,s) not in queue:
+                #If the new state is unique and action is not opposite of parent, add it to the queue.
+                if s is not None and (i,j,s) not in queue and [1,0,3,2][j] != queue[i][1]: 
                     queue.append((i,j,s))
                 
+                #If the state is a winning state, traverse back to the root node
+                #by iteratively jumping to the current state's parent.
                 if win(s):
                     path = [j]
                     k = i
@@ -104,17 +120,17 @@ def bfs(grid):
                         path.insert(0,queue[k][1])
                         k = queue[k][0]
                     return path
-                    
-
-        old_index = old_index2
+                
+        #Update the index of the last added parent state.
+        parent_index = parent_index2
 
 
 def main():
     #Grid data Structure. Initial Starting Grid is Randomised. 0 means the square is empty
     
-    grid = [1,2,3,4,5,6,7,8,0]
+    grid = [0,8,7,6,5,4,3,2,1]
 
-    #Shuffle grid by atmost 10 times
+    # Shuffle grid by atmost 10 times
     for i in [int(random.random()*4) for _ in range(10)]:
         if   i == 0 and moveUp(grid)    is not None: grid = moveUp(grid) 
         elif i == 1 and moveDown(grid)  is not None: grid = moveDown(grid)
@@ -122,10 +138,15 @@ def main():
         elif i == 3 and moveLeft(grid)  is not None: grid = moveLeft(grid)
 
     printGrid(grid)
+
+    start = time.time()
+
     path = bfs(grid)
+    
+    print("Path found in" + time.time() - start)
     print([['UP','DOWN','RIGHT','LEFT'][i] for i in path])
     
-    sleep(2.5)
+    time.sleep(2.5)
     printGrid(grid,True)
 
     for i in path:
@@ -135,7 +156,7 @@ def main():
         elif i == 3: grid = moveLeft(grid)
 
         printGrid(grid,True)
-        sleep(1)
+        time.sleep(1)
 
 
 if __name__ == "__main__":
