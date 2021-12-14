@@ -124,39 +124,60 @@ def bfs(grid):
         #Update the index of the last added parent state.
         parent_index = parent_index2
 
+#One liner obfuscated function
+heuristic = lambda g,x=1:sum(x*(abs(i%3-((not t)*(((t-1)%(1<<3))+1)+(t&1)*(t-1))%3)+abs(i//3-([8,0,1,2,3,4,5,6,7][t])//3))+(not(x|((not t)*(((t-1)%8)+1)+(t&(not not ord("Gabriel_Freeze"[2+0+2+1])))*(t-1))-i)) for i,t in enumerate(g))
+
+
+# def heuristic(grid,x = True):
+#     t = [8,0,1,2,3,4,5,6,7]
+#     w = 3
+
+#     if x: #Manhattan Distance
+#         return sum(abs(i%w - t[tile]%w) + abs(i//w - t[tile]//w) for i,tile in enumerate(grid))
+#     else: #Number of Misplaced Tiles
+#         return sum(t[tile] == i for i,tile in enumerate(grid))
+
+
 
 def main():
     #Grid data Structure. Initial Starting Grid is Randomised. 0 means the square is empty
     
     grid = [0,8,7,6,5,4,3,2,1]
 
-    # Shuffle grid by atmost 10 times
-    for i in [int(random.random()*4) for _ in range(10)]:
-        if   i == 0 and moveUp(grid)    is not None: grid = moveUp(grid) 
-        elif i == 1 and moveDown(grid)  is not None: grid = moveDown(grid)
-        elif i == 2 and moveRight(grid) is not None: grid = moveRight(grid)
-        elif i == 3 and moveLeft(grid)  is not None: grid = moveLeft(grid)
-
-    printGrid(grid)
-
-    start = time.time()
-
-    path = bfs(grid)
     
-    print("Path found in" + time.time() - start)
-    print([['UP','DOWN','RIGHT','LEFT'][i] for i in path])
+    print(heuristic(grid,True)) 
+
+
+
+
+
+    # # Shuffle grid by atmost 10 times
+    # for i in [int(random.random()*4) for _ in range(10)]:
+    #     if   i == 0 and moveUp(grid)    is not None: grid = moveUp(grid) 
+    #     elif i == 1 and moveDown(grid)  is not None: grid = moveDown(grid)
+    #     elif i == 2 and moveRight(grid) is not None: grid = moveRight(grid)
+    #     elif i == 3 and moveLeft(grid)  is not None: grid = moveLeft(grid)
+
+    # printGrid(grid)
+
+    # start = time.time()
+
+    # path = bfs(grid)
     
-    time.sleep(2.5)
-    printGrid(grid,True)
+    # print("Path found in" + time.time() - start)
+    # print([['UP','DOWN','RIGHT','LEFT'][i] for i in path])
+    
+    # time.sleep(2.5)
+    # printGrid(grid,True)
 
-    for i in path:
-        if   i == 0: grid = moveUp(grid) 
-        elif i == 1: grid = moveDown(grid)
-        elif i == 2: grid = moveRight(grid)
-        elif i == 3: grid = moveLeft(grid)
+    # for i in path:
+    #     if   i == 0: grid = moveUp(grid) 
+    #     elif i == 1: grid = moveDown(grid)
+    #     elif i == 2: grid = moveRight(grid)
+    #     elif i == 3: grid = moveLeft(grid)
 
-        printGrid(grid,True)
-        time.sleep(1)
+    #     printGrid(grid,True)
+    #     time.sleep(1)
 
 
 if __name__ == "__main__":
