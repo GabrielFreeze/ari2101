@@ -3,7 +3,7 @@ import time
 from copy import deepcopy
 
 
-def printGrid(grid, x = False):
+def printGridAnim(grid, x = False):
     
     if grid == None: return
     if x: print("\033[%d;%dH" % (0,0))
@@ -22,7 +22,74 @@ def printGrid(grid, x = False):
 
     print('⌞___⊥___⊥___⌟')
 
+
+def printGrid(grid):
     
+    if grid == None: return
+
+    print(" ___________ ")
+    for i in range(0,9,3):
+        if (i != 0): print('|___|___|___|')
+        print( "| " + (str(grid[i])   if grid[i]   != 0 else ' ') + 
+              " | " + (str(grid[i+1]) if grid[i+1] != 0 else ' ') +
+              " | " + (str(grid[i+2]) if grid[i+2] != 0 else ' ') +
+              " |")
+
+    print('|___|___|___|')
+
+
+
+
+def printMenuColor():
+    print("\t\033[91mChoose search strategy\033[0m\n")
+    print("\033[92m[1]\033[0m\tBreadth First Search")
+    print("\033[92m[2]\033[0m\tGreedy Best First Search")
+    print("\033[92m[3]\033[0m\tA* Search")
+    print("\033[92m[4]\033[0m\tEnforced Hill Climbing")
+
+    search_option = 0
+
+    while not (1 <= search_option <= 4):
+        search_option = int(input('Option: '))
+
+
+    print("\t\033[91mChoose heuristic\033[0m\n")
+    print("\033[92m[1]\033[0m\t Number of Misplaced Tiles")
+    print("\033[92m[2]\033[0m\t Manhattan Distance")
+
+    heuristic_option = 0
+    
+    while not (1 <= heuristic_option <= 2):
+        heuristic_option = int(input('Option: '))
+    
+    return (search_option,heuristic_option)
+
+
+def printMenu():
+    print("\tChoose search strategy\n")
+    print("[1]\tBreadth First Search")
+    print("[2]\tGreedy Best First Search")
+    print("[3]\tA* Search")
+    print("[4]\tEnforced Hill Climbing")
+
+    search_option = 0
+
+    while not (1 <= search_option <= 4):
+        search_option = int(input('Option: '))
+
+
+    print("\tChoose heuristic\n")
+    print("[1]\t Number of Misplaced Tiles")
+    print("[2]\t Manhattan Distance")
+
+    heuristic_option = 0
+    
+    while not (1 <= heuristic_option <= 2):
+        heuristic_option = int(input('Option: '))
+    
+    return (search_option,heuristic_option)
+    
+
 
 def moveUp(grid):
     if grid == None: return None
@@ -69,7 +136,29 @@ win = lambda grid: grid == [1,2,3,4,5,6,7,8,0]
 #One liner obfuscated function
 # heuristic = lambda g,x=1:sum(x*(abs(i%3-((not t)*(((t-1)%(1<<3))+1)+(not not t)*(t-1))%3)+abs(i//3-([8,0,1,2,3,4,5,6,7][t])//3))+(not(x|((not t)*(((t-1)%8)+1)+(t&(not not ord("Gabriel_Freeze"[2+0+2+1])))*(t-1))-i)) for i,t in enumerate(g) if t)
 
-def heuristic(grid,x = True):
+
+def cost(start, end = [1,2,3,4,5,6,7,8,0], x = True):
+    #A starting configuration
+    #B final configuration. GOAL CONFIGURATION
+
+    A = [(i,j) for i,j in enumerate(end)]
+    A.sort(key=lambda x: x[1])
+
+    t = [i for i,_ in A]
+    
+    w = 3
+
+    if x: #Manhattan Distance
+        return sum(abs(i%w - t[tile]%w) + abs(i//w - t[tile]//w) for i,tile in enumerate(start) if tile != 0)
+    else: #Number of Misplaced Tiles
+        return sum(t[tile] == i for i,tile in enumerate(start) if tile != 0)
+
+
+
+
+def heuristic(grid, x = True):
+    
+    
     t = [8,0,1,2,3,4,5,6,7]
     w = 3
 
@@ -136,7 +225,9 @@ def bfs(grid):
         #Update the index of the last added parent state.
         parent_index = parent_index2
 
-def greedy_best(grid,x = True, visited=[]):
+def greedy_best(grid,x = True):
+    
+    
     #Initial state is added to the queue
     queue = [(-1,-1,grid,heuristic(grid,x))]
     visited = []
@@ -163,8 +254,7 @@ def greedy_best(grid,x = True, visited=[]):
         #Expand node
         for i,s in enumerate([moveUp(node), moveDown(node), moveRight(node), moveLeft(node)]):
             
-            if s is not None and (len(visited)-1,i,s) not in visited:
-                
+            if s is not None and (len(visited)-1,i,s) not in visited and [1,0,3,2][i] != move:
                 if win(s):
                     
                     path = [i]
@@ -177,44 +267,104 @@ def greedy_best(grid,x = True, visited=[]):
                     return path
                     
                 else:
-                    queue.append((len(visited)-1,i,s,heuristic(s,x)))
+                    queue.append((len(visited)-1, i, s, heuristic(s,x)))
+           
+
+def a_star(grid,x = True):
+    
+    
+    #Initial state is added to the queue
+    queue = [(-1,-1,grid,heuristic(grid,x))]
+    visited = []
+    node = []
+    g = 1 #Actual cost from starting grid to current grid. g(n)
+
+    if win(grid): return []
+
+    while queue:
         
+        best = float('inf')
+
+        #Get element with lowest
+        for elem in queue:
+            if elem[3] < best: 
+                parent = elem[0]
+                move = elem[1]
+                node = elem[2]
+                best = elem[3]
         
+        queue.remove((parent,move,node,best))
+        visited.append((parent,move,node))
+        # print([i[2] for i in visited])
+        
+        #Expand node
+        for i,s in enumerate([moveUp(node), moveDown(node), moveRight(node), moveLeft(node)]):
+            
+            if s is not None and (len(visited)-1,i,s) not in visited and [1,0,3,2][i] != move:
+                if win(s):
+                    
+                    path = [i]
+                    j,k,_ = visited[-1]
+                    
+                    while j != -1:
+                        path.insert(0,k)
+                        j,k,_ = visited[j]
+
+                    return path
+                    
+                else:
+                    queue.append((len(visited)-1, i, s, g+heuristic(s,x)))
+        g += 1
+           
+
+
 
 
 
 
 def main():
-    #Grid data Structure. Initial Starting Grid is Randomised. 0 means the square is empty
     
-    grid = [1,2,3,4,5,6,7,8,0]
+    a,b = printMenuColor()
+    print("\033[2J")
+    print("\033[%d;%dH" % (0,0))
+    
+    
+    #Grid data Structure. Initial Starting Grid is Randomised. 0 means the square is empty    
+    grid = [0,1,3,6,2,5,4,8,7]
 
-    # Shuffle grid by atmost 10 times
-    for i in [int(random.random()*4) for _ in range(40)]:
-        if   i == 0 and moveUp(grid)    is not None: grid = moveUp(grid) 
-        elif i == 1 and moveDown(grid)  is not None: grid = moveDown(grid)
-        elif i == 2 and moveRight(grid) is not None: grid = moveRight(grid)
-        elif i == 3 and moveLeft(grid)  is not None: grid = moveLeft(grid)
+    # for i in [int(random.random()*4) for _ in range(50)]:
+    #     if   i == 0 and moveUp(grid)    is not None: grid = moveUp(grid) 
+    #     elif i == 1 and moveDown(grid)  is not None: grid = moveDown(grid)
+    #     elif i == 2 and moveRight(grid) is not None: grid = moveRight(grid)
+    #     elif i == 3 and moveLeft(grid)  is not None: grid = moveLeft(grid)
 
-    printGrid(grid)
+    printGridAnim(grid)
+
 
     start = time.time()
 
-    path = bfs(grid)
+    if a == 1: path = bfs(grid, b-1)
+    if a == 2: path = greedy_best(grid, b-1)
+    if a == 3: path = a_star(grid, b-1)
+    
+    
     
     print("Path found in " + str(time.time() - start))
     print([['UP','DOWN','RIGHT','LEFT'][i] for i in path])
     
     time.sleep(2.5)
-    printGrid(grid,True)
+    
+    
+    printGridAnim(grid,True)
 
     for i in path:
         if   i == 0: grid = moveUp(grid) 
         elif i == 1: grid = moveDown(grid)
         elif i == 2: grid = moveRight(grid)
         elif i == 3: grid = moveLeft(grid)
+        
+        printGridAnim(grid,True)
 
-        printGrid(grid,True)
         time.sleep(1)
 
 
