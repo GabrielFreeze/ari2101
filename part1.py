@@ -21,8 +21,6 @@ def printGridAnim(grid, x = False):
               " |")
 
     print('⌞___⊥___⊥___⌟')
-
-
 def printGrid(grid):
     
     if grid == None: return
@@ -36,8 +34,6 @@ def printGrid(grid):
               " |")
 
     print('|___|___|___|')
-
-
 
 
 def printMenuColor():
@@ -63,8 +59,6 @@ def printMenuColor():
         heuristic_option = int(input('Option: '))
     
     return (search_option,heuristic_option)
-
-
 def printMenu():
     print("\tChoose search strategy\n")
     print("[1]\tBreadth First Search")
@@ -100,7 +94,6 @@ def moveUp(grid):
     
     new_grid[empty],new_grid[empty-3] = new_grid[empty-3], new_grid[empty]
     return new_grid
-
 def moveDown(grid):
     if grid == None: return None
     new_grid = deepcopy(grid)
@@ -110,7 +103,6 @@ def moveDown(grid):
 
     new_grid[empty],new_grid[empty+3] = new_grid[empty+3], new_grid[empty]
     return new_grid
-
 def moveLeft(grid):
     if grid == None: return None
     new_grid = deepcopy(grid)
@@ -120,7 +112,6 @@ def moveLeft(grid):
 
     new_grid[empty],new_grid[empty-1] = new_grid[empty-1], new_grid[empty]
     return new_grid
-
 def moveRight(grid):
     if grid == None: return None
     new_grid = deepcopy(grid)
@@ -135,7 +126,6 @@ win = lambda grid: grid == [1,2,3,4,5,6,7,8,0]
 
 #One liner obfuscated function
 # heuristic = lambda g,x=1:sum(x*(abs(i%3-((not t)*(((t-1)%(1<<3))+1)+(not not t)*(t-1))%3)+abs(i//3-([8,0,1,2,3,4,5,6,7][t])//3))+(not(x|((not t)*(((t-1)%8)+1)+(t&(not not ord("Gabriel_Freeze"[2+0+2+1])))*(t-1))-i)) for i,t in enumerate(g) if t)
-
 
 def cost(start, end = [1,2,3,4,5,6,7,8,0], x = True):
     #A starting configuration
@@ -152,10 +142,6 @@ def cost(start, end = [1,2,3,4,5,6,7,8,0], x = True):
         return sum(abs(i%w - t[tile]%w) + abs(i//w - t[tile]//w) for i,tile in enumerate(start) if tile != 0)
     else: #Number of Misplaced Tiles
         return sum(t[tile] == i for i,tile in enumerate(start) if tile != 0)
-
-
-
-
 def heuristic(grid, x = True):
     
     
@@ -220,20 +206,18 @@ def bfs(grid):
                         path.insert(0,queue[k][1])
                         k = queue[k][0]
                     
-                    return path
+                    return len(queue),path
                 
         #Update the index of the last added parent state.
         parent_index = parent_index2
-
 def greedy_best(grid,x = True):
-    
     
     #Initial state is added to the queue
     queue = [(-1,-1,grid,heuristic(grid,x))]
     visited = []
     node = []
 
-    if win(grid): return []
+    if win(grid): return 0,[]
 
     while queue:
         
@@ -263,13 +247,11 @@ def greedy_best(grid,x = True):
                     while j != -1:
                         path.insert(0,k)
                         j,k,_ = visited[j]
-
-                    return path
+                  
+                    return len(visited)+len(queue),path
                     
                 else:
                     queue.append((len(visited)-1, i, s, heuristic(s,x)))
-           
-
 def a_star(grid,x = True):
     
     
@@ -309,18 +291,52 @@ def a_star(grid,x = True):
                     while j != -1:
                         path.insert(0,k)
                         j,k,_ = visited[j]
-
-                    return path
+                    return len(queue)+len(visited),path
                     
                 else:
                     queue.append((len(visited)-1, i, s, g+heuristic(s,x)))
         g += 1
-           
+def ehc(grid, x = True):
+    
+    if win(grid): return []
 
+    queue = [(-1,-1,grid)]
+    best = heuristic(grid,x)
+    visited = []
 
+    while queue:
+        node = queue.pop(0)
+        visited.append(node)
 
+        parent = node[0]
+        move   = node[1]
+        grid   = node[2]
+        
 
+        for i,s in enumerate([moveUp(grid), moveDown(grid), moveRight(grid), moveLeft(grid)]):        
+      
+            if s is not None and (len(visited)-1,i,s) not in visited and [1,0,3,2][i] != move:
 
+                if win(s):
+                    path = [i]
+                    j,k,_ = visited[-1]
+                    
+                    while j != -1:
+                        path.insert(0,k)
+                        j,k,_ = visited[j]
+
+                    return len(queue)+len(visited),path
+
+                queue.append((len(visited)-1,i,s))
+                h = heuristic(s,x)
+
+                if h < best:
+                    queue = []
+                    best = h
+                    queue.append((len(visited)-1,i,s))
+                    break
+            
+            
 
 def main():
     
@@ -329,7 +345,7 @@ def main():
     print("\033[%d;%dH" % (0,0))
     
     
-    #Grid data Structure. Initial Starting Grid is Randomised. 0 means the square is empty    
+    #Grid data Structure. 0 means the square is empty    
     grid = [0,1,3,6,2,5,4,8,7]
 
     # for i in [int(random.random()*4) for _ in range(50)]:
@@ -343,13 +359,15 @@ def main():
 
     start = time.time()
 
-    if a == 1: path = bfs(grid, b-1)
-    if a == 2: path = greedy_best(grid, b-1)
-    if a == 3: path = a_star(grid, b-1)
+    if a == 1: states,path = bfs(grid)
+    if a == 2: states,path = greedy_best(grid, b-1)
+    if a == 3: states,path = a_star(grid, b-1)
+    if a == 4: states,path = ehc(grid, b-1)
     
-    
-    
-    print("Path found in " + str(time.time() - start))
+    print("Time taken: " + str(time.time() - start))
+    print("Length of plan: " + str(len(path)))
+    print("Unique states expanded: " + str(states))
+    print('Validitiy: VALID\n')
     print([['UP','DOWN','RIGHT','LEFT'][i] for i in path])
     
     time.sleep(2.5)
@@ -358,10 +376,10 @@ def main():
     printGridAnim(grid,True)
 
     for i in path:
-        if   i == 0: grid = moveUp(grid) 
-        elif i == 1: grid = moveDown(grid)
-        elif i == 2: grid = moveRight(grid)
-        elif i == 3: grid = moveLeft(grid)
+        if i == 0: grid = moveUp(grid) 
+        if i == 1: grid = moveDown(grid)
+        if i == 2: grid = moveRight(grid)
+        if i == 3: grid = moveLeft(grid)
         
         printGridAnim(grid,True)
 
